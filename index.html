@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>360 Image Viewer</title>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <!-- Include WebXR polyfill for broader compatibility -->
+    <script src="https://aframe.io/releases/1.2.0/aframe-extras.js"></script>
+</head>
+<body>
+    <a-scene vr-mode-ui="enabled: false">
+        <!-- Replace the URL with the correct raw URL to your 360-degree image -->
+        <a-sky src="https://i.imgur.com/MC06HXa.jpg" rotation="0 -90 0"></a-sky>
+
+        <!-- Button to enter VR mode -->
+        <a-entity id="enterVRButton"
+                  geometry="primitive: plane; width: 1; height: 0.5"
+                  material="color: #333; opacity: 0.7"
+                  position="-1 0.7 -1"
+                  text="value: VR; align: center; color: white; wrapCount: 10"
+                  cursor-listener></a-entity>
+
+        <!-- Cursor -->
+        <a-entity cursor="fuse: true; fuseTimeout: 500"
+                  raycaster="objects: [cursor-listener]"
+                  position="0 0 -1"></a-entity>
+    </a-scene>
+
+    <script>
+        document.getElementById('enterVRButton').addEventListener('click', function () {
+            enterVR();
+        });
+
+        AFRAME.registerComponent('cursor-listener', {
+            init: function () {
+                this.el.addEventListener('click', function (evt) {
+                    enterVR();
+                });
+            }
+        });
+
+        async function enterVR() {
+            const vrDisplay = await navigator.xr.requestDevice();
+
+            if (vrDisplay) {
+                const canvas = document.querySelector('a-scene').canvas;
+                const session = await vrDisplay.requestSession({ immersive: true, exclusive: true });
+
+                // Enter VR mode
+                await session.requestAnimationFrame(function (time) {
+                    session.endFrame(canvas);
+                });
+
+                // Attach the XRSession to the A-Frame scene
+                const scene = document.querySelector('a-scene');
+                scene.setAttribute('xr', { session: session });
+
+                // Listen for the end of the XR session to exit VR mode
+                session.addEventListener('end', function () {
+                    scene.removeAttribute('xr');
+                });
+            }
+        }
+    </script>
+</body>
+</html>
